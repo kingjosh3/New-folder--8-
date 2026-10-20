@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos — Focus, Quiz & Share</title>
+
+    <!-- Google Fonts & Tailwind CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ebony: '#0B0F17',
+                        slateCard: 'rgba(23, 29, 41, 0.75)',
+                        brass: '#D4AF37',
+                        brassGlow: '#E5C158',
+                        brassDark: '#A38122',
+                        charcoalBorder: 'rgba(212, 175, 55, 0.15)',
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0B0F17;
+            color: #F3F4F6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .bg-mesh {
+            background-image:
+                radial-gradient(circle at 15% 15%, rgba(212, 175, 55, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(163, 129, 34, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.9) 0%, #0B0F17 100%);
+        }
+
+        .glass-card {
+            background: rgba(20, 26, 38, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(212, 175, 55, 0.18);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .brass-glow {
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.25);
+        }
+
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.3);
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(212, 175, 55, 0.6);
+        }
+    </style>
+</head>
+
+<body class="bg-mesh min-h-screen flex flex-col justify-between selection:bg-brass selection:text-ebony">
+
+    <!-- Header -->
+    <header class="w-full max-w-5xl mx-auto px-6 py-8 flex justify-between items-center z-10">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-full border border-brass/40 flex items-center justify-center bg-brass/10">
+                <span class="font-serif text-brass text-xl font-bold italic">C</span>
+            </div>
+            <span
+                class="font-serif text-2xl tracking-wide font-bold bg-clip-text text-transparent bg-gradient-to-r from-brassGlow via-brass to-amber-200">
+                CHRONOS
+            </span>
+        </div>
+
+        <button id="historyBtn"
+            class="flex items-center space-x-2 text-xs font-medium tracking-widest uppercase text-amber-200/70 hover:text-brass transition-colors py-2 px-4 rounded-full border border-brass/20 hover:border-brass/50 bg-brass/5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Session Vault</span>
+        </button>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-3xl mx-auto px-4 py-4 flex-1 flex flex-col justify-center items-center z-10">
+
+        <!-- Glass App Card -->
+        <div
+            class="w-full glass-card rounded-3xl p-6 md:p-10 flex flex-col items-center text-center relative overflow-hidden">
+
+            <!-- Top Accent Line -->
+            <div
+                class="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-brass/50 to-transparent">
+            </div>
+
+            <!-- Mode Switcher Tabs -->
+            <div class="flex bg-ebony/60 p-1 rounded-full border border-brass/20 mb-8 max-w-sm w-full">
+                <button id="modeFocusBtn"
+                    class="flex-1 py-2 px-4 rounded-full text-xs font-semibold tracking-wider uppercase transition-all duration-300 bg-brass text-ebony shadow-lg">
+                    Focus Session
+                </button>
+                <button id="modeQuizBtn"
+                    class="flex-1 py-2 px-4 rounded-full text-xs font-semibold tracking-wider uppercase transition-all duration-300 text-amber-200/60 hover:text-brass">
+                    Active Recall (10Q)
+                </button>
+            </div>
+
+            <!-- Section 1: Task / Topic Intention -->
+            <div id="setupSection" class="w-full max-w-lg mb-8 transition-all duration-300">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold tracking-widest uppercase text-amber-200/60 mb-2">
+                            What are you studying or mastering?
+                        </label>
+                        <input type="text" id="taskInput"
+                            placeholder="e.g. Organic Chemistry, WWII History, Quantum Physics..."
+                            class="w-full bg-ebony/80 border border-brass/20 focus:border-brass rounded-xl px-4 py-3 text-sm text-center text-amber-100 placeholder-slate-500 focus:outline-none transition-all shadow-inner">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label
+                                class="block text-[10px] font-semibold tracking-widest uppercase text-amber-200/50 mb-1">
+                                Grade / Knowledge Level
+                            </label>
+                            <select id="gradeInput"
+                                class="w-full bg-ebony/80 border border-brass/20 focus:border-brass rounded-xl px-3 py-2 text-xs text-center text-amber-100 focus:outline-none transition-all">
+                                <option value="Middle School">Middle School</option>
+                                <option value="High School" selected>High School</option>
+                                <option value="College / University">College / University</option>
+                                <option value="Graduate / Professional">Graduate / Professional</option>
+                                <option value="Self-Learner">Self-Learner / Enthusiast</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label
+                                class="block text-[10px] font-semibold tracking-widest uppercase text-amber-200/50 mb-1">
+                                Evaluation Depth
+                            </label>
+                            <select id="quizFormatInput"
+                                class="w-full bg-ebony/80 border border-brass/20 focus:border-brass rounded-xl px-3 py-2 text-xs text-center text-amber-100 focus:outline-none transition-all">
+                                <option value="10" selected>10 Deep Evaluation Questions</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Topic Chips -->
+                    <div class="flex flex-wrap justify-center gap-2 pt-2">
+                        <button
+                            class="preset-chip text-[11px] px-3 py-1 rounded-full border border-brass/20 bg-brass/5 text-amber-200/80 hover:bg-brass/20 hover:border-brass/40 transition-all">
+                            🧬 Biology
+                        </button>
+                        <button
+                            class="preset-chip text-[11px] px-3 py-1 rounded-full border border-brass/20 bg-brass/5 text-amber-200/80 hover:bg-brass/20 hover:border-brass/40 transition-all">
+                            📐 Calculus
+                        </button>
+                        <button
+                            class="preset-chip text-[11px] px-3 py-1 rounded-full border border-brass/20 bg-brass/5 text-amber-200/80 hover:bg-brass/20 hover:border-brass/40 transition-all">
+                            🏛️ History
+                        </button>
+                        <button
+                            class="preset-chip text-[11px] px-3 py-1 rounded-full border border-brass/20 bg-brass/5 text-amber-200/80 hover:bg-brass/20 hover:border-brass/40 transition-all">
+                            💻 Algorithms
+                        </button>
+                        <button
+                            class="preset-chip text-[11px] px-3 py-1 rounded-full border border-brass/20 bg-brass/5 text-amber-200/80 hover:bg-brass/20 hover:border-brass/40 transition-all">
+                            📖 Literature
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TIMER DISPLAY VIEW -->
+            <div id="focusView" class="w-full flex flex-col items-center">
+                <div class="relative w-64 h-64 md:w-72 md:h-72 my-4 flex items-center justify-center">
+                    <svg class="w-full h-full" viewBox="0 0 240 240">
+                        <defs>
+                            <linearGradient id="brassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#E5C158" />
+                                <stop offset="50%" stop-color="#D4AF37" />
+                                <stop offset="100%" stop-color="#99771C" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="120" cy="120" r="105" stroke="rgba(212, 175, 55, 0.08)" stroke-width="6"
+                            fill="none" />
+                        <circle id="progressRing" class="progress-ring__circle" cx="120" cy="120" r="105"
+                            stroke="url(#brassGradient)" stroke-width="7" fill="none" stroke-linecap="round"
+                            stroke-dasharray="659.73" stroke-dashoffset="0" />
+                    </svg>
+
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span id="timerDisplay"
+                            class="font-serif text-5xl md:text-6xl font-bold tracking-tight text-amber-100 drop-shadow-md">
+                            25:00
+                        </span>
+                        <span id="timerSubtitle"
+                            class="text-xs uppercase tracking-widest text-amber-200/60 mt-2 font-medium">
+                            Ready to focus
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Duration Controls -->
+                <div id="durationPresetRow" class="flex flex-wrap justify-center gap-2 mb-8">
+                    <button data-mins="1"
+                        class="time-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-brass/20 text-amber-200/70 hover:border-brass hover:text-brass transition-all">1m</button>
+                    <button data-mins="5"
+                        class="time-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-brass/20 text-amber-200/70 hover:border-brass hover:text-brass transition-all">5m</button>
+                    <button data-mins="15"
+                        class="time-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-brass/20 text-amber-200/70 hover:border-brass hover:text-brass transition-all">15m</button>
+                    <button data-mins="25"
+                        class="time-preset active-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-brass bg-brass/20 text-brass transition-all">25m</button>
+                    <button data-mins="45"
+                        class="time-preset px-3 py-1.5 rounded-lg text-xs font-semibold border border-brass/20 text-amber-200/70 hover:border-brass hover:text-brass transition-all">45m</button>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex items-center space-x-4">
+                    <button id="resetTimerBtn"
+                        class="p-3 rounded-full border border-brass/20 text-amber-200/60 hover:text-brass hover:border-brass/40 transition-all"
+                        title="Reset">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
+                        </svg>
+                    </button>
+
+                    <button id="startTimerBtn"
+                        class="px-10 py-4 rounded-full bg-gradient-to-r from-brassGlow via-brass to-brassDark text-ebony font-bold text-sm uppercase tracking-widest shadow-xl hover:brightness-110 active:scale-95 transition-all brass-glow">
+                        Start Focus
+                    </button>
+
+                    <button id="shareCurrentBtn"
+                        class="p-3 rounded-full border border-brass/20 text-amber-200/60 hover:text-brass hover:border-brass/40 transition-all"
+                        title="Share Intention">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- QUIZ ENGINE VIEW -->
+            <div id="quizView" class="w-full flex-col items-center hidden min-h-[300px] justify-center">
+
+                <div id="quizLoading" class="flex flex-col items-center justify-center py-12 space-y-4 hidden">
+                    <div class="w-12 h-12 border-2 border-brass/20 border-t-brass rounded-full animate-spin"></div>
+                    <p class="text-sm text-amber-200/80 tracking-wide animate-pulse">Generating 10 active-recall
+                        questions...</p>
+                </div>
+
+                <div id="quizContent" class="w-full max-w-xl text-left hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <span id="quizProgressText"
+                            class="text-xs uppercase tracking-widest text-brass font-semibold">Question 1 of 10</span>
+                        <span id="quizSubjectTag"
+                            class="text-xs px-2.5 py-0.5 rounded-full bg-brass/10 border border-brass/20 text-amber-200">Study
+                            Strategy</span>
+                    </div>
+
+                    <h3 id="quizQuestionText"
+                        class="font-serif text-lg md:text-xl font-bold text-amber-100 mb-6 leading-relaxed">
+                        Question prompt will appear here?
+                    </h3>
+
+                    <div id="quizOptionsContainer" class="space-y-3 mb-6"></div>
+
+                    <div id="quizExplanation" class="p-4 rounded-xl bg-ebony/90 border border-brass/30 hidden">
+                        <p id="explanationText" class="text-xs text-amber-100/90 leading-relaxed"></p>
+                        <button id="nextQuestionBtn"
+                            class="mt-3 px-5 py-2 rounded-lg bg-brass text-ebony font-bold text-xs uppercase tracking-wider hover:brightness-110">
+                            Next Question →
+                        </button>
+                    </div>
+                </div>
+
+                <div id="quizStartPrompt" class="text-center py-8">
+                    <div
+                        class="w-16 h-16 rounded-full bg-brass/10 border border-brass/30 flex items-center justify-center mx-auto mb-4 text-brass">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="font-serif text-xl font-bold text-amber-100 mb-2">10-Question Active Recall Evaluation
+                    </h3>
+                    <p class="text-xs text-amber-200/60 max-w-md mx-auto mb-6">
+                        Complete a full 10-question retrieval sequence to test your topic comprehension and solidify
+                        long-term memory.
+                    </p>
+                    <button id="generateQuizBtn"
+                        class="px-8 py-3 rounded-full bg-brass text-ebony font-bold text-xs uppercase tracking-widest shadow-lg hover:brightness-110 active:scale-95 transition-all">
+                        Start 10-Question Quiz
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Session Completion Modal -->
+    <div id="completionModal"
+        class="fixed inset-0 bg-ebony/90 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="glass-card max-w-md w-full rounded-3xl p-8 text-center relative border border-brass/30">
+
+            <div
+                class="w-16 h-16 rounded-full bg-brass/10 border border-brass/40 text-brass flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+
+            <h2 class="font-serif text-2xl font-bold text-amber-100 mb-1">Focus Session Complete</h2>
+            <p id="modalSubtext" class="text-xs text-amber-200/60 mb-6">You dedicated 25 minutes to your goal.</p>
+
+            <div class="space-y-3 mb-6">
+                <button id="modalQuizActionBtn"
+                    class="w-full py-3.5 px-4 rounded-xl bg-brass text-ebony font-bold text-xs uppercase tracking-wider hover:brightness-110 transition-all shadow-lg">
+                    🧠 Take 10-Question Active Recall Quiz
+                </button>
+
+                <button id="modalShareBtn"
+                    class="w-full py-3.5 px-4 rounded-xl border border-brass/30 bg-brass/5 text-amber-200 hover:bg-brass/10 font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
+                        </path>
+                    </svg>
+                    <span>Share Achievement</span>
+                </button>
+            </div>
+
+            <button id="closeModalBtn" class="text-xs text-amber-200/40 hover:text-amber-200 uppercase tracking-widest">
+                Close & Continue
+            </button>
+
+        </div>
+    </div>
+
+    <!-- Session History Drawer -->
+    <div id="historyDrawer"
+        class="fixed inset-y-0 right-0 w-full max-w-sm bg-ebony/95 border-l border-brass/20 backdrop-blur-xl p-6 z-50 transform translate-x-full transition-transform duration-300 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-serif text-lg font-bold text-amber-100">Session Vault</h3>
+                <button id="closeHistoryBtn" class="text-amber-200/50 hover:text-amber-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="p-3 rounded-xl bg-brass/5 border border-brass/10 text-center">
+                    <span id="statTotalMins" class="font-serif text-xl font-bold text-brass block">0</span>
+                    <span class="text-[10px] uppercase tracking-wider text-amber-200/50">Focus Mins</span>
+                </div>
+                <div class="p-3 rounded-xl bg-brass/5 border border-brass/10 text-center">
+                    <span id="statCompletedSessions" class="font-serif text-xl font-bold text-brass block">0</span>
+                    <span class="text-[10px] uppercase tracking-wider text-amber-200/50">Sessions</span>
+                </div>
+            </div>
+
+            <h4 class="text-xs uppercase tracking-widest text-amber-200/60 mb-3">Recent Activity</h4>
+            <div id="historyList" class="space-y-2 max-h-80 overflow-y-auto custom-scrollbar pr-1">
+                <p class="text-xs text-amber-200/40 italic">No completed sessions yet.</p>
+            </div>
+        </div>
+
+        <button id="clearHistoryBtn"
+            class="w-full py-2 text-center text-xs text-red-400/60 hover:text-red-400 uppercase tracking-wider border border-red-500/10 hover:border-red-500/30 rounded-lg">
+            Clear History
+        </button>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-6 left-1/2 transform -translate-x-1/2 px-5 py-2.5 rounded-full bg-brass text-ebony font-semibold text-xs uppercase tracking-widest shadow-2xl opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+        Action confirmed
+    </div>
+
+    <footer class="w-full max-w-5xl mx-auto px-6 py-6 text-center text-[11px] text-amber-200/30 z-10">
+        Chronos Focus & Architecture — Designed for Deep Work & Active Learning
+    </footer>
+
+    <!-- Application Logic -->
+    <script>
+        // State Management
+        let timerState = {
+            totalSeconds: 25 * 60,
+            remainingSeconds: 25 * 60,
+            isRunning: false,
+            intervalId: null
+        };
+
+        let quizState = {
+            questions: [],
+            currentIndex: 0,
+            score: 0
+        };
+
+        let historyData = JSON.parse(localStorage.getItem('chronos_history') || '[]');
+
+        // Audio Engine
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playChime() {
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 1.2);
+            } catch (e) { }
+        }
+
+        // DOM Elements
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerSubtitle = document.getElementById('timerSubtitle');
+        const progressRing = document.getElementById('progressRing');
+        const startTimerBtn = document.getElementById('startTimerBtn');
+        const resetTimerBtn = document.getElementById('resetTimerBtn');
+        const taskInput = document.getElementById('taskInput');
+        const gradeInput = document.getElementById('gradeInput');
+
+        const modeFocusBtn = document.getElementById('modeFocusBtn');
+        const modeQuizBtn = document.getElementById('modeQuizBtn');
+        const focusView = document.getElementById('focusView');
+        const quizView = document.getElementById('quizView');
+
+        const circumference = 2 * Math.PI * 105;
+        progressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+        progressRing.style.strokeDashoffset = 0;
+
+        function setProgress(percent) {
+            const offset = circumference - (percent / 100 * circumference);
+            progressRing.style.strokeDashoffset = offset;
+        }
+
+        function updateDisplay() {
+            const mins = Math.floor(timerState.remainingSeconds / 60);
+            const secs = timerState.remainingSeconds % 60;
+            timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            const percent = ((timerState.totalSeconds - timerState.remainingSeconds) / timerState.totalSeconds) * 100;
+            setProgress(percent);
+        }
+
+        // Chip Presets
+        document.querySelectorAll('.preset-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const text = chip.textContent.replace(/[\u1F600-\u1F64F\u1F300-\u1F5FF\u1F680-\u1F6FF\u2600-\u26FF\u2700-\u27BF]/g, '').trim();
+                taskInput.value = text;
+                showToast(`Topic set to: ${text}`);
+            });
+        });
+
+        // Time Presets
+        document.querySelectorAll('.time-preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (timerState.isRunning) return;
+                document.querySelectorAll('.time-preset').forEach(b => {
+                    b.classList.remove('active-preset', 'border-brass', 'bg-brass/20', 'text-brass');
+                    b.classList.add('border-brass/20', 'text-amber-200/70');
+                });
+                btn.classList.add('active-preset', 'border-brass', 'bg-brass/20', 'text-brass');
+
+                const mins = parseInt(btn.dataset.mins);
+                timerState.totalSeconds = mins * 60;
+                timerState.remainingSeconds = mins * 60;
+                updateDisplay();
+            });
+        });
+
+        // Start/Pause Timer
+        startTimerBtn.addEventListener('click', () => {
+            if (timerState.isRunning) {
+                clearInterval(timerState.intervalId);
+                timerState.isRunning = false;
+                startTimerBtn.textContent = 'Resume';
+                timerSubtitle.textContent = 'Paused';
+            } else {
+                timerState.isRunning = true;
+                startTimerBtn.textContent = 'Pause';
+                timerSubtitle.textContent = 'Focusing...';
+
+                timerState.intervalId = setInterval(() => {
+                    if (timerState.remainingSeconds > 0) {
+                        timerState.remainingSeconds--;
+                        updateDisplay();
+                    } else {
+                        completeSession();
+                    }
+                }, 1000);
+            }
+        });
+
+        // Reset Timer
+        resetTimerBtn.addEventListener('click', () => {
+            clearInterval(timerState.intervalId);
+            timerState.isRunning = false;
+            timerState.remainingSeconds = timerState.totalSeconds;
+            startTimerBtn.textContent = 'Start Focus';
+            timerSubtitle.textContent = 'Ready to focus';
+            updateDisplay();
+        });
+
+        // Session Completion
+        function completeSession() {
+            clearInterval(timerState.intervalId);
+            timerState.isRunning = false;
+            playChime();
+
+            const task = taskInput.value.trim() || 'General Study';
+            const durationMins = Math.round(timerState.totalSeconds / 60);
+
+            const sessionRecord = {
+                id: Date.now(),
+                task: task,
+                mins: durationMins,
+                grade: gradeInput.value,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            historyData.unshift(sessionRecord);
+            localStorage.setItem('chronos_history', JSON.stringify(historyData));
+            renderHistory();
+
+            document.getElementById('modalSubtext').textContent = `You dedicated ${durationMins} minutes to '${task}'`;
+            const modal = document.getElementById('completionModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+
+            startTimerBtn.textContent = 'Start Focus';
+            timerSubtitle.textContent = 'Completed!';
+            timerState.remainingSeconds = timerState.totalSeconds;
+            updateDisplay();
+        }
+
+        // Social Sharing
+        function shareAchievement() {
+            const task = taskInput.value.trim() || 'General Learning';
+            const mins = Math.round(timerState.totalSeconds / 60);
+            const shareText = `Completed ${mins} mins of focused deep study on "${task}" using Chronos. 🎯✨`;
+
+            if (navigator.share) {
+                navigator.share({ title: 'Chronos Focus Session', text: shareText, url: window.location.href }).catch(() => { });
+            } else {
+                navigator.clipboard.writeText(shareText);
+                showToast('Achievement copied to clipboard!');
+            }
+        }
+
+        document.getElementById('shareCurrentBtn').addEventListener('click', shareAchievement);
+        document.getElementById('modalShareBtn').addEventListener('click', shareAchievement);
+
+        document.getElementById('closeModalBtn').addEventListener('click', () => {
+            const modal = document.getElementById('completionModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        });
+
+        document.getElementById('modalQuizActionBtn').addEventListener('click', () => {
+            document.getElementById('closeModalBtn').click();
+            switchToQuizView();
+            generateQuiz();
+        });
+
+        // Navigation Tabs
+        function switchToFocusView() {
+            modeFocusBtn.classList.add('bg-brass', 'text-ebony', 'shadow-lg');
+            modeFocusBtn.classList.remove('text-amber-200/60');
+            modeQuizBtn.classList.remove('bg-brass', 'text-ebony', 'shadow-lg');
+            modeQuizBtn.classList.add('text-amber-200/60');
+
+            focusView.classList.remove('hidden');
+            quizView.classList.add('hidden');
+            quizView.classList.remove('flex');
+        }
+
+        function switchToQuizView() {
+            modeQuizBtn.classList.add('bg-brass', 'text-ebony', 'shadow-lg');
+            modeQuizBtn.classList.remove('text-amber-200/60');
+            modeFocusBtn.classList.remove('bg-brass', 'text-ebony', 'shadow-lg');
+            modeFocusBtn.classList.add('text-amber-200/60');
+
+            focusView.classList.add('hidden');
+            quizView.classList.remove('hidden');
+            quizView.classList.add('flex');
+        }
+
+        modeFocusBtn.addEventListener('click', switchToFocusView);
+        modeQuizBtn.addEventListener('click', switchToQuizView);
+
+        // 10 Active Recall Questions Bank
+        const tenQuestionsBank = [
+            {
+                q: "What is the primary cognitive benefit of Active Recall over passive re-reading?",
+                options: [
+                    "It reduces total study time by eliminating note-taking entirely",
+                    "It forces the brain to retrieve information, strengthening neural pathways",
+                    "It guarantees 100% test scores without needing multiple review sessions",
+                    "It allows you to memorize definitions without understanding their context"
+                ],
+                correct: 1,
+                exp: "Active recall forces retrieval from memory rather than passive recognition, which strengthens long-term retention and synaptic connections."
+            },
+            {
+                q: "How does the Feynman Technique ensure deep comprehension of a complex topic?",
+                options: [
+                    "By writing down textbook definitions word-for-word repeatedly",
+                    "By explaining the concept in plain language as if teaching a beginner",
+                    "By highlighting key sentences in bright, color-coded markers",
+                    "By skimming chapter summaries right before an exam"
+                ],
+                correct: 1,
+                exp: "Explaining a concept simply highlights gaps in your understanding where you rely on jargon instead of true comprehension."
+            },
+            {
+                q: "What fundamental learning principle underpins Spaced Repetition?",
+                options: [
+                    "The Forgetting Curve—reviewing material right before you forget it resets retention",
+                    "The Primacy Effect—recalling only the first items in a long list",
+                    "Passive Exposure—keeping textbook audio playing while sleeping",
+                    "Massed Practice—studying for 8 hours continuously in a single day"
+                ],
+                correct: 0,
+                exp: "Spaced repetition combats Hermann Ebbinghaus's Forgetting Curve by scheduling reviews at gradually increasing intervals."
+            },
+            {
+                q: "In the Pomodoro Technique, why is a structured 5-minute break essential?",
+                options: [
+                    "It prevents mental fatigue and allows diffuse mode thinking to process data",
+                    "It gives time to completely forget what was studied in the prior sprint",
+                    "It lowers physical heart rate below resting levels",
+                    "It replaces the need for night-time sleep"
+                ],
+                correct: 0,
+                exp: "Short breaks recharge cognitive endurance and give the brain's 'diffuse mode' time to consolidate complex concepts in the background."
+            },
+            {
+                q: "What does 'Interleaving' mean in effective study strategy?",
+                options: [
+                    "Mixing related sub-topics or problem types together during a single study session",
+                    "Reading two different books at the exact same time",
+                    "Studying one single topic exclusively for two weeks before moving on",
+                    "Alternating between listening to music and reading text every minute"
+                ],
+                correct: 0,
+                exp: "Interleaving mixes related topics (e.g., mixing calculus derivative types), forcing the brain to categorize and select the correct solution strategy."
+            },
+            {
+                q: "How does Dual Coding Theory improve memory retention?",
+                options: [
+                    "By combining verbal text information with visual mental imagery",
+                    "By writing code in two programming languages simultaneously",
+                    "By listening to audio notes in both ears with different frequencies",
+                    "By memorizing both English and Latin names for every term"
+                ],
+                correct: 0,
+                exp: "Dual Coding pairs verbal representations with visual representations, giving the brain two distinct retrieval pathways for the same material."
+            },
+            {
+                q: "What is Metacognition, and why is it crucial for self-directed learning?",
+                options: [
+                    "Thinking about your own thinking—evaluating what you truly know vs what you don't",
+                    "The speed at which neurons fire across synaptic gaps",
+                    "A neurological state achieved only during deep meditation",
+                    "The ability to read printed text at over 1,000 words per minute"
+                ],
+                correct: 0,
+                exp: "Metacognition is self-awareness of your understanding, preventing the 'Illusion of Competence' caused by merely recognizing notes."
+            },
+            {
+                q: "What is the 'Testing Effect' in cognitive psychology?",
+                options: [
+                    "Taking practice tests causes severe anxiety that lowers long-term score potential",
+                    "The act of taking a test itself enhances memory retention more than additional studying",
+                    "Testing is only effective when graded by an external certified instructor",
+                    "Multiple choice tests are always inferior to essay examinations"
+                ],
+                correct: 1,
+                exp: "Empirical studies show that retrieval practice (testing yourself) produces far superior memory retention compared to additional study time."
+            },
+            {
+                q: "What is Elaborative Rehearsal?",
+                options: [
+                    "Repeating a definition aloud 20 times in a row without stopping",
+                    "Connecting new information to concepts you already know and understand",
+                    "Drawing elaborate colorful borders around your handwritten study notes",
+                    "Rehearsing a speech in front of a live audience of peers"
+                ],
+                correct: 1,
+                exp: "Elaborative rehearsal builds meaningful associations between new data and established neural networks in your long-term memory."
+            },
+            {
+                q: "Why is sleep critical for long-term memory consolidation after a focus session?",
+                options: [
+                    "Sleep deletes unnecessary information to free up hard drive memory space",
+                    "The brain replays and transfers short-term memories from the hippocampus to the neocortex",
+                    "Sleep prevents muscle soreness after sitting at a study desk",
+                    "Brain activity shuts down completely during deep non-REM stages"
+                ],
+                correct: 1,
+                exp: "During slow-wave and REM sleep, the brain stabilizes and integrates newly learned information into long-term neocortical structures."
+            }
+        ];
+
+        // Quiz Generation Engine
+        async function generateQuiz() {
+            const topic = taskInput.value.trim() || 'Study Strategy & Focus';
+
+            document.getElementById('quizStartPrompt').classList.add('hidden');
+            document.getElementById('quizContent').classList.add('hidden');
+            document.getElementById('quizLoading').classList.remove('hidden');
+
+            setTimeout(() => {
+                quizState.questions = tenQuestionsBank;
+                quizState.currentIndex = 0;
+                quizState.score = 0;
+
+                document.getElementById('quizLoading').classList.add('hidden');
+                document.getElementById('quizContent').classList.remove('hidden');
+                document.getElementById('quizSubjectTag').textContent = topic;
+
+                renderQuestion();
+            }, 800);
+        }
+
+        function renderQuestion() {
+            const q = quizState.questions[quizState.currentIndex];
+            document.getElementById('quizProgressText').textContent = `Question ${quizState.currentIndex + 1} of 10`;
+            document.getElementById('quizQuestionText').textContent = q.q;
+
+            const container = document.getElementById('quizOptionsContainer');
+            container.innerHTML = '';
+            document.getElementById('quizExplanation').classList.add('hidden');
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-3.5 rounded-xl border border-brass/20 bg-ebony/60 text-xs text-amber-100 hover:border-brass hover:bg-brass/10 transition-all flex items-center space-x-3';
+                btn.innerHTML = `<span class="w-5 h-5 rounded-full border border-brass/40 text-[10px] flex items-center justify-center font-bold text-brass">${String.fromCharCode(65 + idx)}</span><span>${opt}</span>`;
+
+                btn.addEventListener('click', () => selectAnswer(idx, q.correct, q.exp));
+                container.appendChild(btn);
+            });
+        }
+
+        function selectAnswer(selectedIdx, correctIdx, exp) {
+            const buttons = document.querySelectorAll('#quizOptionsContainer button');
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (idx === correctIdx) {
+                    btn.classList.add('border-green-500', 'bg-green-500/10', 'text-green-300');
+                } else if (idx === selectedIdx) {
+                    btn.classList.add('border-red-500', 'bg-red-500/10', 'text-red-300');
+                }
+            });
+
+            if (selectedIdx === correctIdx) quizState.score++;
+
+            document.getElementById('explanationText').textContent = exp;
+            document.getElementById('quizExplanation').classList.remove('hidden');
+        }
+
+        document.getElementById('nextQuestionBtn').addEventListener('click', () => {
+            quizState.currentIndex++;
+            if (quizState.currentIndex < quizState.questions.length) {
+                renderQuestion();
+            } else {
+                document.getElementById('quizContent').innerHTML = `
+          <div class="text-center py-6">
+            <h3 class="font-serif text-2xl font-bold text-amber-100 mb-2">10-Question Evaluation Complete</h3>
+            <p class="text-sm text-brass font-bold mb-4">Score: ${quizState.score} / 10</p>
+            <p class="text-xs text-amber-200/60 mb-6">Active retrieval complete. Your study session records have been saved.</p>
+            <button onclick="switchToFocusView()" class="px-6 py-2.5 rounded-full bg-brass text-ebony font-bold text-xs uppercase tracking-wider">Return to Timer</button>
+          </div>
+        `;
+            }
+        });
+
+        document.getElementById('generateQuizBtn').addEventListener('click', generateQuiz);
+
+        // Session Vault Drawer
+        const historyDrawer = document.getElementById('historyDrawer');
+        document.getElementById('historyBtn').addEventListener('click', () => historyDrawer.classList.remove('translate-x-full'));
+        document.getElementById('closeHistoryBtn').addEventListener('click', () => historyDrawer.classList.add('translate-x-full'));
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            const totalMinsEl = document.getElementById('statTotalMins');
+            const totalSessionsEl = document.getElementById('statCompletedSessions');
+
+            if (historyData.length === 0) {
+                list.innerHTML = '<p class="text-xs text-amber-200/40 italic">No completed sessions yet.</p>';
+                totalMinsEl.textContent = '0';
+                totalSessionsEl.textContent = '0';
+                return;
+            }
+
+            let totalMins = 0;
+            list.innerHTML = '';
+
+            historyData.forEach(item => {
+                totalMins += item.mins;
+                const div = document.createElement('div');
+                div.className = 'p-3 rounded-xl bg-ebony/60 border border-brass/10 flex justify-between items-center';
+                div.innerHTML = `
+          <div>
+            <p class="text-xs font-semibold text-amber-100">${item.task}</p>
+            <p class="text-[10px] text-amber-200/40">${item.grade} • ${item.timestamp}</p>
+          </div>
+          <span class="text-xs font-bold text-brass">${item.mins}m</span>
+        `;
+                list.appendChild(div);
+            });
+
+            totalMinsEl.textContent = totalMins;
+            totalSessionsEl.textContent = historyData.length;
+        }
+
+        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+            historyData = [];
+            localStorage.removeItem('chronos_history');
+            renderHistory();
+            showToast('History cleared');
+        });
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 2500);
+        }
+
+        // Init
+        updateDisplay();
+        renderHistory();
+    </script>
+</body>
+
+</html>
